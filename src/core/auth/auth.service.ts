@@ -56,7 +56,7 @@ export class AuthService {
       createAuthDto.email,
       createAuthDto.password,
     );
-    const payload = { email: user.email, sub: user.id };
+    const payload = { sub: user.id, email: user.email, role: user.role};
 
     return {
       accessToken: await this.jwtService.signAsync(payload),
