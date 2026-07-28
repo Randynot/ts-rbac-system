@@ -27,7 +27,7 @@ export enum AccountStatus {
 }
 
 @Entity('users')
-@Index(['email']) // Indexed email
+// @Index(['email']) // Indexed email
 export class User {
   @PrimaryGeneratedColumn('uuid') // UUID for better security
   id!: string;
@@ -97,7 +97,7 @@ export class User {
   // Lifecycle hooks
   @BeforeInsert()
   @BeforeUpdate()
-  emailToLowerCase() {
+  emailToLowerCase(): void {
     if (this.email) {
       this.email = this.email.toLowerCase();
     }
