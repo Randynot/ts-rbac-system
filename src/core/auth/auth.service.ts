@@ -25,6 +25,7 @@ import {
 interface AuthTokenPayload {
   sub: string;
   email: string;
+  role: string;
 }
 
 @Injectable()
@@ -239,6 +240,7 @@ export class AuthService {
 
     return { message: 'Logged out successfully' };
   }
+
   /**
    * Revokes EVERY active refresh token belonging to a user, across all
    * devices/sessions — not just the one token family that was reused.
@@ -286,7 +288,7 @@ export class AuthService {
     repository: Repository<RefreshToken>,
     rotatedFrom?: string,
   ): Promise<LoginResponse> {
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, sub: user.id, role: user.role };
 
     const accessToken = await this.jwtService.signAsync(payload);
 

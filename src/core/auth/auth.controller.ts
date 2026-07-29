@@ -1,7 +1,11 @@
 import { AuthService } from './auth.service';
 
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 
+import { Roles } from './../../common/decorators/roles.decorator';
+import { RolesGuard } from './../../common/guards/roles/roles.guard';
+import { UserRole } from './../../core/auth/entities/user.entity';
+import { jwtGuard } from './../auth/guards/jwt.guard';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import {
@@ -31,5 +35,14 @@ export class AuthController {
   @Post('logout')
   logout(@Body() dto: RefreshTokenDto): Promise<{ message: string }> {
     return this.authService.logout(dto.refreshToken);
+  }
+
+  @Get('admin-test')
+  @UseGuards(jwtGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  adminTest(): { message: string } {
+    return {
+      message: 'You have admin access',
+    };
   }
 }
