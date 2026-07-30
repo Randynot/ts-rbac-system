@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { compare, hash } from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../users/users.service';
 
@@ -18,32 +18,19 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
   ) {}
-
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findOneByEmailWithPassword(email);
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const isLocked = await this.usersService.isAccountLocked(user.id);
-
-    if (isLocked) {
-      throw new UnauthorizedException(
-        'Account temporarily locked. Try again later.',
-      );
-    }
-
-    const isMatch = await compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      await this.usersService.incrementFailedAttempts(user.id);
       throw new UnauthorizedException('Invalid credentials');
     }
-    await this.usersService.resetFailedAttempts(user.id);
     return user;
   }
 
-  async register(
-    createAuthDto: CreateAuthDto,
-  ): Promise<{ id: string; email: string }> {
+  async register(createAuthDto: CreateAuthDto) {
     const existingUser = await this.usersService.findOneByEmail(
       createAuthDto.email,
     );
@@ -51,7 +38,7 @@ export class AuthService {
       throw new BadRequestException('Email is already registered');
     }
 
-    const hashedPassword = await hash(createAuthDto.password, 10);
+    const hashedPassword = await bcrypt.hash(createAuthDto.password, 10);
     const user = await this.usersService.create({
       email: createAuthDto.email,
       name: createAuthDto.email.split('@')[0],
@@ -64,12 +51,12 @@ export class AuthService {
     };
   }
 
-  async login(createAuthDto: CreateAuthDto): Promise<{ accessToken: string }> {
+  async login(createAuthDto: CreateAuthDto) {
     const user = await this.validateUser(
       createAuthDto.email,
       createAuthDto.password,
     );
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, email: user.email, role: user.role};
 
     return {
       accessToken: await this.jwtService.signAsync(payload),

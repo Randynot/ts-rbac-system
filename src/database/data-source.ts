@@ -10,9 +10,10 @@ const configService = new ConfigService();
 export default new DataSource({
   type: 'postgres',
   url: configService.get('DATABASE_URL'),
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl:
+    process.env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
   entities: ['src/**/*.entity.ts'],
   migrations: ['src/database/migrations/*.ts'],
   migrationsTableName: 'migrations',
