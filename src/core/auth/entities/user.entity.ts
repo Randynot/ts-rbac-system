@@ -104,7 +104,7 @@ export class User {
   }
 
   // Check if account is locked
-  isLocked(): boolean | null {
+  isLocked(): boolean {
     return !!(this.lockedUntil && this.lockedUntil > new Date());
   }
 

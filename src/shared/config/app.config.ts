@@ -14,6 +14,14 @@ export default registerAs('appConfig', () => ({
     jwtVerificationSecret: process.env.JWT_VERIFICATION_SECRET,
     // Parsing this into a number to prevent calculations on strings!
     bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),
+    lockoutMaxAttempts: parseInt(
+      process.env.AUTH_LOCKOUT_MAX_ATTEMPTS || '5',
+      10,
+    ),
+    lockoutDurationSeconds: parseInt(
+      process.env.AUTH_LOCKOUT_DURATION_SECONDS || '900',
+      10,
+    ),
   },
 
   // Email configurations
