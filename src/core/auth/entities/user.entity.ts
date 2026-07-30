@@ -97,14 +97,14 @@ export class User {
   // Lifecycle hooks
   @BeforeInsert()
   @BeforeUpdate()
-  emailToLowerCase() {
+  emailToLowerCase(): void {
     if (this.email) {
       this.email = this.email.toLowerCase();
     }
   }
 
   // Check if account is locked
-  isLocked(): boolean | null {
+  isLocked(): boolean {
     return !!(this.lockedUntil && this.lockedUntil > new Date());
   }
 

@@ -13,6 +13,45 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
+  async incrementFailedAttempts(userId: string): Promise<User | void> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      return;
+    }
+
+    user.loginAttempts += 1;
+
+    if (user.loginAttempts >= 5) {
+      user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+    }
+
+    return this.usersRepository.save(user);
+  }
+
+  async resetFailedAttempts(userId: string): Promise<User | void> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+
+    if (!user) {
+      return;
+    }
+
+    user.loginAttempts = 0;
+    user.lockedUntil = null;
+
+    return this.usersRepository.save(user);
+  }
+
+  async isAccountLocked(userId: string): Promise<boolean> {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+
+    if (!user?.lockedUntil) {
+      return false;
+    }
+
+    return user.lockedUntil.getTime() > Date.now();
+  }
+
   create(userInformation: Partial<User>): Promise<User> {
     const user = this.usersRepository.create(userInformation);
     return this.usersRepository.save(user);
