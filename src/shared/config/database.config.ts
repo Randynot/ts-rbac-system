@@ -15,7 +15,7 @@ export const databaseConfig = registerAs(
     // Autoload database entities
     entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
     // Production migration of entity changes
-    migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+    migrations: [__dirname + '/../../database/migrations/*{.ts,.js}'],
     migrationsRun: process.env.NODE_ENV === 'production', // Auto-run migrations in production
     migrationsTableName: 'migrations',
 
