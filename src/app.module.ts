@@ -13,13 +13,14 @@ import appConfig from './shared/config/app.config';
 import redisConfig from './shared/config/redis.config';
 import { databaseConfig } from './shared/config/database.config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { BullModule } from '@nestjs/bullmq';
+import { QueueModule } from './core/queue/queue.module';
 import { RedisModule } from './core/redis/redis.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
+    QueueModule,
     EventEmitterModule.forRoot(),
     RedisModule,
     // 1. Core system configuration
@@ -28,15 +29,6 @@ import { RedisModule } from './core/redis/redis.module';
       isGlobal: true,
       envFilePath: '.env',
       expandVariables: true,
-    }),
-    BullModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.getOrThrow<string>('redisConfig.host'),
-          port: configService.getOrThrow<number>('redisConfig.port'),
-        },
-      }),
     }),
 
     // 2. Rate Limiting -> 10 req/min

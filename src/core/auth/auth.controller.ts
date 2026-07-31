@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { Body, Controller, Post, Get, UseGuards, Query } from '@nestjs/common';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { SendVerificationEmailPayload } from './dto/verification-email.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 
@@ -28,7 +29,13 @@ export class AuthController {
     const user = await this.authService.register(dto);
     const verificationToken = await this.authService.verificationSecret(user);
 
-    this.eventEmitter.emit('user.registered', verificationToken);
+    const payload: SendVerificationEmailPayload = {
+      email: user.email,
+      token: verificationToken,
+    };
+
+    this.eventEmitter.emit('user.registered', payload);
+
     return { message: 'Sign Up successful, verify Email.' }
   }
 
