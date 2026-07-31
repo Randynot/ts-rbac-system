@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
+import { AccountStatus } from './entities/user.entity';
+import { UUID } from 'node:crypto';
+
 import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 
 import { UsersService } from '../users/users.service';
 
@@ -20,7 +24,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) {}
+    private configService: ConfigService,
+  ) { }
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findOneByEmailWithPassword(email);
     if (!user || !user.password) {
@@ -85,5 +90,52 @@ export class AuthService {
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };
+  }
+
+  async verificationSecret(data: { id: string; email: string }) {
+    const payload = { sub: data.id, email: data.email, purpose: 'email-verification' };
+
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('appConfig.auth.jwtVerificationSecret'),
+      expiresIn: '15m',
+    });
+
+    await this.usersService.update(data.id as UUID, { verificationToken: token });
+
+    return token;
+  }
+
+  async verifyEmail(token: string) {
+    let payload: { sub: string; email: string; purpose: string };
+
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.getOrThrow<string>('appConfig.auth.jwtVerificationSecret'),
+      });
+    } catch (err) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    if (payload.purpose !== 'email-verification') {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    const user = await this.usersService.findOneById(payload.sub as UUID);
+    if (!user) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    if (user.verificationToken !== token) {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    await this.usersService.update(user.id as UUID, {
+      status: AccountStatus.ACTIVE,
+      emailVerifiedAt: new Date(),
+      isVerified: true,
+      verificationToken: null,
+    });
+
+    return { verified: true };
   }
 }

@@ -1,8 +1,10 @@
 import { AuthService } from './auth.service';
 
-import { Body, Controller, Post, Get, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Query } from '@nestjs/common';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+
 
 import { jwtGuard } from './../auth/guards/jwt.guard';
 import { RolesGuard } from './../../common/guards/roles/roles.guard';
@@ -12,16 +14,30 @@ import { UserRole } from './../../core/auth/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private eventEmitter: EventEmitter2
+  ) { }
 
   @Post('login')
   login(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.login(createAuthDto);
   }
   @Post('register')
-  register(@Body() dto: CreateAuthDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: CreateAuthDto) {
+    const user = await this.authService.register(dto);
+    const verificationToken = await this.authService.verificationSecret(user);
+
+    this.eventEmitter.emit('user.registered', verificationToken);
+    return { message: 'Sign Up successful, verify Email.' }
   }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+
 
   @Get('admin-test')
   @UseGuards(jwtGuard, RolesGuard)

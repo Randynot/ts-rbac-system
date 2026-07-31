@@ -11,11 +11,13 @@ import { AuthModule } from './core/auth/auth.module';
 import { UsersModule } from './core/users/users.module';
 import appConfig from './shared/config/app.config';
 import { databaseConfig } from './shared/config/database.config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
+    EventEmitterModule.forRoot(),
     // 1. Core system configuration
     ConfigModule.forRoot({
       load: [databaseConfig, appConfig],
@@ -57,4 +59,4 @@ import { databaseConfig } from './shared/config/database.config';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
