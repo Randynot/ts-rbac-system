@@ -59,7 +59,7 @@ export class User {
   @Column({ default: false })
   isVerified: boolean = false;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   verificationToken!: string | null;
 
   @Column({ nullable: true })
