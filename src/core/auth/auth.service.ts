@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
@@ -15,16 +16,22 @@ import { UsersService } from '../users/users.service';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { User } from './entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SendVerificationEmailPayload } from './dto/verification-email.dto';
+import { Logger } from '@nestjs/common';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$MwL2hICCvJC6Ft2pCEb/o.TxXNtKk8bgxTDbE0SYclpdRrSxrpN0u';
 
 @Injectable()
 export class AuthService {
+
+  private readonly logger = new Logger(AuthService.name);
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private eventEmitter: EventEmitter2,
   ) { }
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findOneByEmailWithPassword(email);
@@ -54,6 +61,10 @@ export class AuthService {
     if (user.loginAttempts > 0) {
       await this.usersService.resetFailedAttempts(user.id);
     }
+
+    if (!user.isVerified) {
+      throw new ForbiddenException('Please verify your email to continue');
+    }
     return user;
   }
 
@@ -74,12 +85,22 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    const verificationToken = await this.verificationSecret({
+      id: user.id,
+      email: user.email,
+    });
+
+    const payload: SendVerificationEmailPayload = {
+      email: user.email,
+      token: verificationToken,
+    };
+    this.eventEmitter.emit('user.registered', payload);
+
     return {
       id: user.id,
       email: user.email,
     };
   }
-
   async login(createAuthDto: CreateAuthDto): Promise<{ accessToken: string }> {
     const user = await this.validateUser(
       createAuthDto.email,
@@ -138,4 +159,5 @@ export class AuthService {
 
     return { verified: true };
   }
+
 }

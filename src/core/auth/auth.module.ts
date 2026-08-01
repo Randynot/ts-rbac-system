@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { QueueModule } from '../queue/queue.module';
+import { AuthListener } from './auth.listener';
 
 import type { SignOptions } from 'jsonwebtoken';
 
@@ -39,7 +40,7 @@ import { LocalStrategy } from './strategy/local.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, AuthListener],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule { }
