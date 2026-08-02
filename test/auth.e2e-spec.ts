@@ -72,7 +72,8 @@ describe('AuthController (E2E)', () => {
         .send(registerDto)
         .expect(400);
 
-      expect(response.body.message).toBe('Email is already registered');
+      const body = response.body as { message?: string };
+      expect(body.message).toBe('Email is already registered');
     });
 
     it('should fail if email validation fails', async () => {
@@ -119,8 +120,9 @@ describe('AuthController (E2E)', () => {
         .send(userCredentials)
         .expect(201);
 
-      expect(response.body).toHaveProperty('accessToken');
-      expect(typeof response.body.accessToken).toBe('string');
+      const body = response.body as { accessToken?: string };
+      expect(body.accessToken).toBeDefined();
+      expect(typeof body.accessToken).toBe('string');
     });
 
     it('should reject login if credentials are invalid (wrong password)', async () => {
@@ -134,7 +136,8 @@ describe('AuthController (E2E)', () => {
         .send(wrongCredentials)
         .expect(401); // unauthorized status code
 
-      expect(response.body.message).toBe('Invalid credentials');
+      const body = response.body as { message?: string };
+      expect(body.message).toBe('Invalid credentials');
     });
 
     it('should reject login if email does not exist', async () => {
@@ -148,7 +151,8 @@ describe('AuthController (E2E)', () => {
         .send(nonexistentCredentials)
         .expect(401);
 
-      expect(response.body.message).toBe('Invalid credentials');
+      const body = response.body as { message?: string };
+      expect(body.message).toBe('Invalid credentials');
     });
   });
 
@@ -190,7 +194,8 @@ describe('AuthController (E2E)', () => {
         .get('/auth/admin-test')
         .expect(401);
 
-      expect(response.body.message).toBe('Unauthorized');
+      const body = response.body as { message?: string };
+      expect(body.message).toBe('Unauthorized');
     });
 
     it('should prevent access if token is provided but user role is regular (Roles Guard)', async () => {
@@ -200,7 +205,8 @@ describe('AuthController (E2E)', () => {
         .send(regularUserCredentials)
         .expect(201);
 
-      const token = loginResponse.body.accessToken;
+      const loginBody = loginResponse.body as { accessToken?: string };
+      const token = loginBody.accessToken;
 
       // access the admin resource using the regular user's token
       const response = await request(app.getHttpServer())
@@ -208,7 +214,8 @@ describe('AuthController (E2E)', () => {
         .set('Authorization', `Bearer ${token}`)
         .expect(403); // should return forbidden status code
 
-      expect(response.body.message).toBe(
+      const body = response.body as { message?: string };
+      expect(body.message).toBe(
         'You do not have permission to access this resource.',
       );
     });
@@ -220,7 +227,8 @@ describe('AuthController (E2E)', () => {
         .send(adminUserCredentials)
         .expect(201);
 
-      const token = loginResponse.body.accessToken;
+      const loginBody = loginResponse.body as { accessToken?: string };
+      const token = loginBody.accessToken;
 
       // access the admin resource using the admin user's token
       const response = await request(app.getHttpServer())
@@ -228,7 +236,8 @@ describe('AuthController (E2E)', () => {
         .set('Authorization', `Bearer ${token}`)
         .expect(200); // success
 
-      expect(response.body.message).toBe('You have admin access');
+      const body = response.body as { message?: string };
+      expect(body.message).toBe('You have admin access');
     });
   });
 });

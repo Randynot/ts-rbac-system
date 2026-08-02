@@ -13,18 +13,20 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(@Body() createAuthDto: CreateAuthDto) {
+  login(
+    @Body() createAuthDto: CreateAuthDto,
+  ): Promise<{ accessToken: string }> {
     return this.authService.login(createAuthDto);
   }
   @Post('register')
-  register(@Body() dto: CreateAuthDto) {
+  register(@Body() dto: CreateAuthDto): Promise<{ id: string; email: string }> {
     return this.authService.register(dto);
   }
 
   @Get('admin-test')
   @UseGuards(jwtGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  adminTest() {
+  adminTest(): { message: string } {
     return {
       message: 'You have admin access',
     };
