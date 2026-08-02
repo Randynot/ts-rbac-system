@@ -56,6 +56,12 @@ export class User {
   })
   status!: AccountStatus;
 
+  @Column({ default: false })
+  isVerified: boolean = false;
+
+  @Column({ type: 'varchar', nullable: true })
+  verificationToken!: string | null;
+
   @Column({ nullable: true })
   emailVerifiedAt?: Date;
 
