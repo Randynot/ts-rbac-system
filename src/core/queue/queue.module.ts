@@ -1,14 +1,17 @@
 // src/queue/queue.module.ts
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EmailProcessor } from './processors/email.processor';
+import { EmailProcessor } from '../email/email.processor';
 import { EmailModule } from '../email/email.module';
+import { AuthModule } from '../auth/auth.module';
+import { AuthProcessor } from '../auth/processors/auth.processor'
 
 @Module({
     imports: [
         EmailModule,
         ConfigModule,
+        forwardRef(() => AuthModule),
         BullModule.forRootAsync({
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
@@ -20,11 +23,13 @@ import { EmailModule } from '../email/email.module';
         }),
 
         BullModule.registerQueue(
-            { name: 'email' }
+            { name: 'email' },
+            { name: 'auth' }
         ),
     ],
     providers: [
-        EmailProcessor
+        EmailProcessor,
+        AuthProcessor
     ],
     exports: [BullModule],
 })

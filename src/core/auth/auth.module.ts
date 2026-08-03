@@ -1,12 +1,12 @@
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QueueModule } from '../queue/queue.module';
 import { AuthListener } from './auth.listener';
+import { QueueModule } from '../queue/queue.module';
 
 import type { SignOptions } from 'jsonwebtoken';
 
@@ -15,11 +15,12 @@ import { UsersModule } from '../users/users.module';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { LocalStrategy } from './strategy/local.strategy';
+import { Queue } from 'bullmq';
 
 @Module({
   imports: [
     UsersModule,
-    QueueModule,
+    forwardRef(() => QueueModule),
     TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
       inject: [ConfigService],

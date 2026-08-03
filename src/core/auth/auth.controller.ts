@@ -33,6 +33,18 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: { email: string }) {
+    this.authService.queueForgotPasswordProcess(dto.email);
+    return { message: 'If an account with that email exists, a password reset link has been sent.' };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: { newPassword: string }, @Query('token') token: string) {
+    await this.authService.resetPassword(token, dto.newPassword);
+    return { message: 'Your password has been reset successfully.' };
+  }
+
   @Get('admin-test')
   @UseGuards(jwtGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

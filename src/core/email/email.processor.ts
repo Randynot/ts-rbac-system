@@ -1,8 +1,7 @@
 import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
-import { SendVerificationEmailPayload } from '../../auth/dto/verification-email.dto';
-import { EmailService } from '../../email/email.service';
+import { EmailService } from './email.service';
 
 @Processor('email')
 export class EmailProcessor extends WorkerHost {
@@ -21,7 +20,7 @@ export class EmailProcessor extends WorkerHost {
             case 'send-verification':
                 await this.emailService.sendVerificationEmail(job.data.email, job.data.token);
                 break;
-            case 'send-password-reset':
+            case 'send-reset-email':
                 await this.emailService.sendResetEmail(job.data.email, job.data.token);
                 break;
             default:

@@ -12,6 +12,7 @@ export class AuthListener {
 
     constructor(
         @InjectQueue('email') private readonly emailQueue: Queue,
+        @InjectQueue('auth') private readonly authQueue: Queue,
     ) { }
     @OnEvent('user.registered')
     async queueVerificationEmail(payload: SendVerificationEmailPayload) {
@@ -31,4 +32,39 @@ export class AuthListener {
             },
         )
     }
+
+    @OnEvent('user.forgot-password')
+    async queuePasswordResetEmail(payload: { email: string; token: string }) {
+        this.logger.log(`Reset password queued`);
+        const { email, token } = payload;
+
+        await this.emailQueue.add(
+            'send-reset-email',
+            { email, token },
+            {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 2000 },
+                removeOnComplete: true,
+                removeOnFail: false,
+            },
+        );
+    }
+
+    @OnEvent('user.reset-password-process')
+    async queueResetProcess(email: string) {
+        this.logger.log(`Reset password process queued`);
+
+        await this.authQueue.add(
+            'reset-password',
+            {email},
+            {
+                attempts: 3,
+                backoff: { type: 'exponential', delay: 2000 },
+                removeOnComplete: true,
+                removeOnFail: false,
+            },
+        );
+    }
+
+
 }
