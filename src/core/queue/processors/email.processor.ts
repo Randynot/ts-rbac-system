@@ -21,15 +21,12 @@ export class EmailProcessor extends WorkerHost {
             case 'send-verification':
                 await this.emailService.sendVerificationEmail(job.data.email, job.data.token);
                 break;
+            case 'send-password-reset':
+                await this.emailService.sendResetEmail(job.data.email, job.data.token);
+                break;
             default:
                 throw new Error(`Unknown job: ${job.name}`);
         }
-    }
-
-    private async sendVerificationEmail(data: SendVerificationEmailPayload) {
-        const { email, token } = data;
-        // your email logic
-        this.logger.log(`Welcome email sent to ${data.email}`);
     }
 
     @OnWorkerEvent('completed')

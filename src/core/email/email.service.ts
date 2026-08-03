@@ -40,4 +40,13 @@ export class EmailService {
             html: `<p>Please click the following link to verify your email: <a href="${verificationLink}">Verify Email</a></p>`,
         });
     }
+
+    async sendResetEmail(to: string, token: string) {
+        const resetLink = `${this.configService.get<string>('LOCALHOST')}/auth/reset-password?token=${token}`;
+        await this.sendEmail({
+            to,
+            subject: 'Reset your Password',
+            html: `<p>Please click the following link to reset your password: <a href="${resetLink}">Reset Password</a></p>`,
+        });
+    }
 }
