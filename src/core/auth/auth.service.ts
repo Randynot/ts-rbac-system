@@ -220,6 +220,7 @@ export class AuthService {
       loginAttempts: 0
     })
 
+    await this.usersService.revokeAllRefreshTokens(user.id as UUID, 'Password reset');
     return { message: 'Password has been reset successfully.' };
   }
 
