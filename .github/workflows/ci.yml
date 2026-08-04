@@ -1,0 +1,59 @@
+name: RBAC_TS_Backend CI
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate:
+    name: Lint, Types, Migrations, Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db?sslmode=disable
+      JWT_ACCESS_SECRET: 33ae8632511ed14d8bc92c7c341e276e66fb4cefafa96dbed548ef402e213efd
+      JWT_REFRESH_SECRET: 2b7a829951998ef097b1d6e47da64fd53ce2d66e43f06615720f5f9dc2afdb38
+      NODE_ENV: test
+
+    steps: 
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: 
+          node-version: 22
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci 
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npx tsc --noEmit
+
+      - name: Production Build
+        run: npm run build
+
+      - name: Run Migrations
+        run: npm run migration:run
+
+      - name: Run Integration Tests
+        run: npm run test:e2e
+
+      - name: Run Unit Tests
+        run: npm run test
