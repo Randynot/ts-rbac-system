@@ -10,17 +10,25 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './core/auth/auth.module';
 import { UsersModule } from './core/users/users.module';
 import appConfig from './shared/config/app.config';
+import redisConfig from './shared/config/redis.config';
 import { databaseConfig } from './shared/config/database.config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { QueueModule } from './core/queue/queue.module';
+import { RedisModule } from './core/redis/redis.module';
 
 @Module({
   imports: [
     AuthModule,
     UsersModule,
+    QueueModule,
+    EventEmitterModule.forRoot(),
+    RedisModule,
     // 1. Core system configuration
     ConfigModule.forRoot({
-      load: [databaseConfig, appConfig],
+      load: [databaseConfig, appConfig, redisConfig],
       isGlobal: true,
       envFilePath: '.env',
+      expandVariables: true,
     }),
 
     // 2. Rate Limiting -> 10 req/min
@@ -57,4 +65,4 @@ import { databaseConfig } from './shared/config/database.config';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }
