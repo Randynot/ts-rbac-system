@@ -6,7 +6,7 @@ import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 @Injectable()
 export class ProfileUploadListener {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
-  @OnEvent('profile.upload', { async: true })
+  @OnEvent('user.profile_picture.upload', { async: true })
   async handleProfileUploadEvent(payload: {
     userId: string;
     file: Express.Multer.File;
