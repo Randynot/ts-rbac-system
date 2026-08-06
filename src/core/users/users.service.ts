@@ -6,6 +6,7 @@ import type { UUID } from 'node:crypto';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
 import { User } from '../auth/entities/user.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class UsersService {
@@ -13,7 +14,8 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private readonly configService: ConfigService,
-  ) { }
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   async incrementFailedAttempts(userId: string): Promise<void> {
     const maxAttempts = this.getPositiveIntegerConfig(
@@ -101,5 +103,14 @@ export class UsersService {
       ? configuredValue
       : fallback;
   }
+  async uploadProfilePicture(userId: string, file: Express.Multer.File) {
+    this.eventEmitter.emit('user.profile_picture.upload', {
+      userId,
+      file,
+    });
 
+    return {
+      message: 'Profile picture upload started',
+    };
+  }
 }

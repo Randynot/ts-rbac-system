@@ -15,9 +15,11 @@ import { UsersModule } from './core/users/users.module';
 import appConfig from './shared/config/app.config';
 import { databaseConfig } from './shared/config/database.config';
 import redisConfig from './shared/config/redis.config';
+import { EventsModule } from './core/events/events.module';
 
 @Module({
   imports: [
+    EventsModule,
     AuthModule,
     UsersModule,
     QueueModule,

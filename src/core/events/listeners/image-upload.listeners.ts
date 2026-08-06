@@ -5,7 +5,7 @@ import { CloudinaryService } from '../../cloudinary/cloudinary.service';
 
 @Injectable()
 export class ProfileUploadListener {
-  constructor(private cloudinaryService: CloudinaryService) {}
+  constructor(private readonly cloudinaryService: CloudinaryService) {}
   @OnEvent('profile.upload', { async: true })
   async handleProfileUploadEvent(payload: {
     userId: string;
