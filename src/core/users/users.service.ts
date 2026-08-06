@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseInterceptors } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -101,4 +101,5 @@ export class UsersService {
       ? configuredValue
       : fallback;
   }
+
 }
