@@ -8,8 +8,8 @@ export class ProfileUploadListener {
   constructor(private cloudinaryService: CloudinaryService) {}
   @OnEvent('profile.upload', { async: true })
   async handleProfileUploadEvent(payload: {
-    usrId: string;
-    file: Express.Multer.file;
+    userId: string;
+    file: Express.Multer.File;
   }) {
     try {
       const result = await this.cloudinaryService.uploadImage(payload.file);
