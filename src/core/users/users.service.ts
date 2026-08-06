@@ -1,12 +1,12 @@
-import { Injectable, UseInterceptors } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import type { UUID } from 'node:crypto';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
 import { User } from '../auth/entities/user.entity';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class UsersService {
@@ -112,5 +112,13 @@ export class UsersService {
     return {
       message: 'Profile picture upload started',
     };
+  }
+  async updateProfilePicture(
+    userId: string,
+    profilePicture: string,
+  ): Promise<UpdateResult> {
+    return this.usersRepository.update(userId, {
+      profilePicture,
+    });
   }
 }
