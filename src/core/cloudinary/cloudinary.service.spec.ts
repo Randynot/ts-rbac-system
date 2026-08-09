@@ -1,7 +1,7 @@
 import { CloudinaryService } from './cloudinary.service';
 
-import { PassThrough } from 'node:stream';
 import { v2 as cloudinary } from 'cloudinary';
+import { PassThrough } from 'node:stream';
 
 jest.mock('cloudinary', () => ({
   v2: {

@@ -44,21 +44,51 @@ describe('AuthController (E2E)', () => {
     await app.close();
   });
 
+  const registerAndVerify = async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<void> => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send(credentials)
+      .expect(201)
+      .expect({ message: 'Sign Up successful, verify Email.' });
+
+    const registeredUser = await usersService.findOneByEmail(credentials.email);
+    expect(registeredUser).not.toBeNull();
+    expect(registeredUser?.verificationToken).toEqual(expect.any(String));
+
+    await request(app.getHttpServer())
+      .get('/auth/verify-email')
+      .query({ token: registeredUser!.verificationToken })
+      .expect(200)
+      .expect({ verified: true });
+  };
+
   describe('POST /auth/register', () => {
     const registerDto = {
       email: 'testuser@example.com',
       password: 'strongPassword123',
     };
 
-    it('should successfully register a new user and return user metadata', async () => {
+    it('registers a new user without exposing user metadata', async () => {
       const response = await request(app.getHttpServer())
         .post('/auth/register')
         .send(registerDto)
         .expect(201);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('email', registerDto.email);
-      expect(response.body).not.toHaveProperty('password'); // Password shouldn't be leaked
+      expect(response.body).toEqual({
+        message: 'Sign Up successful, verify Email.',
+      });
+      expect(response.body).not.toHaveProperty('id');
+      expect(response.body).not.toHaveProperty('password');
+
+      const registeredUser = await usersService.findOneByEmail(
+        registerDto.email,
+      );
+      expect(registeredUser).toEqual(
+        expect.objectContaining({ email: registerDto.email }),
+      );
     });
 
     it('should fail with a 400 bad request if the email is already registered', async () => {
@@ -108,10 +138,7 @@ describe('AuthController (E2E)', () => {
     };
 
     beforeEach(async () => {
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(userCredentials)
-        .expect(201);
+      await registerAndVerify(userCredentials);
     });
 
     it('should login successfully and return an access token', async () => {
@@ -168,16 +195,8 @@ describe('AuthController (E2E)', () => {
     };
 
     beforeEach(async () => {
-      // register a regular user and an admin user
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(regularUserCredentials)
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(adminUserCredentials)
-        .expect(201);
+      await registerAndVerify(regularUserCredentials);
+      await registerAndVerify(adminUserCredentials);
 
       // fetch the admin user from the db and promote their role to admin directly
       const adminUser = await usersService.findOneByEmail(
