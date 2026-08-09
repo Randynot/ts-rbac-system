@@ -1,13 +1,14 @@
 // src/queue/queue.module.ts
-import { Module, forwardRef } from '@nestjs/common';
 import { EmailQueueErrorHandler } from './email-queue-error-handler.provider';
 
 import { BullModule } from '@nestjs/bullmq';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EmailProcessor } from '../email/email.processor';
-import { EmailModule } from '../email/email.module';
+
 import { AuthModule } from '../auth/auth.module';
-import { AuthProcessor } from '../auth/processors/auth.processor'
+import { AuthProcessor } from '../auth/processors/auth.processor';
+import { EmailModule } from '../email/email.module';
+import { EmailProcessor } from '../email/email.processor';
 
 @Module({
   imports: [
@@ -24,16 +25,9 @@ import { AuthProcessor } from '../auth/processors/auth.processor'
       }),
     }),
 
-    BullModule.registerQueue(
-      { name: 'email' },
-      { name: 'auth' }
-    ),
+    BullModule.registerQueue({ name: 'email' }, { name: 'auth' }),
   ],
-  providers: [
-    EmailProcessor,
-    AuthProcessor,
-    EmailQueueErrorHandler
-  ],
+  providers: [EmailProcessor, AuthProcessor, EmailQueueErrorHandler],
   exports: [BullModule],
 })
-export class QueueModule { }
+export class QueueModule {}

@@ -358,41 +358,52 @@ export class AuthService {
     return { verified: true };
   }
 
-  async queueForgotPasswordProcess(email: string) {
+  queueForgotPasswordProcess(email: string): void {
     this.eventEmitter.emit('user.reset-password-process', email);
   }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string): Promise<void> {
     const user = await this.usersService.findOneByEmail(email);
     if (!user) {
-      return
+      return;
     }
 
     const payload = { sub: user?.id, purpose: 'password-reset' };
 
     const token = await this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('appConfig.auth.jwtResetSecret'),
+      secret: this.configService.getOrThrow<string>(
+        'appConfig.auth.jwtResetSecret',
+      ),
       expiresIn: '15m',
     });
     await this.usersService.update(user?.id as UUID, { resetToken: null });
-    const tokenHash = await bcrypt.hash(token, 10)
-    await this.usersService.update(user?.id as UUID, { resetToken: tokenHash })
+    const tokenHash = await bcrypt.hash(token, 10);
+    await this.usersService.update(user?.id as UUID, { resetToken: tokenHash });
 
-    this.eventEmitter.emit('user.forgot-password', { email: email, token: token });
+    this.eventEmitter.emit('user.forgot-password', {
+      email: email,
+      token: token,
+    });
 
-    return
+    return;
   }
 
-  async resetPassword(token: string, password: string) {
-
+  async resetPassword(
+    token: string,
+    password: string,
+  ): Promise<{ message: string }> {
     let payload: { sub: string; purpose: string };
 
     try {
       payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow<string>('appConfig.auth.jwtResetSecret'),
+        secret: this.configService.getOrThrow<string>(
+          'appConfig.auth.jwtResetSecret',
+        ),
       });
-    } catch (err) {
-      throw new BadRequestException('Invalid or expired reset token/ bad token');
+    } catch {
+      throw new BadRequestException(
+        'Invalid or expired reset token/ bad token',
+      );
     }
 
     if (payload.purpose !== 'password-reset') {
@@ -401,22 +412,26 @@ export class AuthService {
 
     const user = await this.usersService.findOneById(payload.sub as UUID);
     if (!user || !user.resetToken) {
-      throw new BadRequestException('Invalid or expired reset token/ no user or reset token');
+      throw new BadRequestException(
+        'Invalid or expired reset token/ no user or reset token',
+      );
     }
 
     const tokenMatches = await bcrypt.compare(token, user.resetToken);
     if (!tokenMatches) {
-      throw new BadRequestException('Invalid or expired reset token/ token mismatch');
+      throw new BadRequestException(
+        'Invalid or expired reset token/ token mismatch',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await this.usersService.update(user.id as UUID, {
       password: hashedPassword,
       resetToken: null,
-      loginAttempts: 0
-    })
+      loginAttempts: 0,
+    });
 
-    await this.usersService.revokeAllRefreshTokens(user.id as UUID, 'Password reset');
+    await this.usersService.revokeAllRefreshTokens(user.id, 'Password reset');
     return { message: 'Password has been reset successfully.' };
   }
 
@@ -504,5 +519,4 @@ export class AuthService {
       .update(token)
       .digest('hex');
   }
-
 }

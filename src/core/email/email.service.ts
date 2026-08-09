@@ -32,7 +32,7 @@ export class EmailService {
     return data;
   }
 
-  async sendResetEmail(to: string, token: string) {
+  async sendResetEmail(to: string, token: string): Promise<void> {
     const resetLink = `${this.configService.get<string>('LOCALHOST')}/auth/reset-password?token=${token}`;
     await this.sendEmail({
       to,
@@ -50,4 +50,3 @@ export class EmailService {
     });
   }
 }
-

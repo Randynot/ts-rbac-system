@@ -14,16 +14,20 @@ export class AuthListener {
   constructor(
     @InjectQueue('email') private readonly emailQueue: Queue,
     @InjectQueue('auth') private readonly authQueue: Queue,
-  ) { }
+  ) {}
   @OnEvent('user.registered')
-  async queueVerificationEmail(payload: SendVerificationEmailPayload): Promise<void> {
-    this.logger.log(`queueVerificationEmail called: ${JSON.stringify(payload)}`)
+  async queueVerificationEmail(
+    payload: SendVerificationEmailPayload,
+  ): Promise<void> {
+    this.logger.log(
+      `queueVerificationEmail called: ${JSON.stringify(payload)}`,
+    );
     const { token, email } = payload;
     await this.emailQueue.add(
       'send-verification',
       {
         email: email,
-        token: token
+        token: token,
       },
       {
         attempts: 3,
@@ -31,11 +35,14 @@ export class AuthListener {
         removeOnComplete: true,
         removeOnFail: false,
       },
-    )
+    );
   }
 
   @OnEvent('user.forgot-password')
-  async queuePasswordResetEmail(payload: { email: string; token: string }) {
+  async queuePasswordResetEmail(payload: {
+    email: string;
+    token: string;
+  }): Promise<void> {
     this.logger.log(`Reset password queued`);
     const { email, token } = payload;
 
@@ -52,7 +59,7 @@ export class AuthListener {
   }
 
   @OnEvent('user.reset-password-process')
-  async queueResetProcess(email: string) {
+  async queueResetProcess(email: string): Promise<void> {
     this.logger.log(`Reset password process queued`);
 
     await this.authQueue.add(
@@ -66,7 +73,4 @@ export class AuthListener {
       },
     );
   }
-
-
 }
-

@@ -5,8 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { UUID } from 'node:crypto';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
-import { User } from '../auth/entities/user.entity';
 import { RefreshToken } from '../auth/entities/refresh-token.entity';
+import { User } from '../auth/entities/user.entity';
 
 @Injectable()
 export class UsersService {

@@ -15,7 +15,6 @@ import { UsersModule } from '../users/users.module';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { LocalStrategy } from './strategy/local.strategy';
-import { Queue } from 'bullmq';
 
 @Module({
   imports: [
@@ -44,4 +43,4 @@ import { Queue } from 'bullmq';
   providers: [AuthService, LocalStrategy, JwtStrategy, AuthListener],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}
