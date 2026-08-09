@@ -1,5 +1,8 @@
 // Import all the system modules here
 // Import Controller and Service
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -32,6 +35,11 @@ import redisConfig from './shared/config/redis.config';
       envFilePath: '.env',
       expandVariables: true,
     }),
+    AuthModule,
+    UsersModule,
+    QueueModule,
+    EventEmitterModule.forRoot(),
+    RedisModule,
 
     // 2. Rate Limiting -> 10 req/min
     ThrottlerModule.forRoot({
@@ -64,7 +72,7 @@ import redisConfig from './shared/config/redis.config';
     // 6. Feature and utility modules (call them here), (Utility - EventsModule and EmailModule)
   ],
 
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

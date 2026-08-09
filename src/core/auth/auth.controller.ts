@@ -1,3 +1,4 @@
+import { LoginResponse } from './auth.interface';
 import { AuthService } from './auth.service';
 
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { RolesGuard } from './../../common/guards/roles/roles.guard';
 import { UserRole } from './../../core/auth/entities/user.entity';
 import { jwtGuard } from './../auth/guards/jwt.guard';
 import { CreateAuthDto } from './dto/create-auth.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +43,15 @@ export class AuthController {
   // logout(@Body() dto: RefreshTokenDto): Promise<{ message: string }> {
   //   return this.authService.logout(dto.refreshToken);
   // }
+  @Post('refresh')
+  refresh(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
+    return this.authService.refreshTokens(dto.refreshToken);
+  }
+
+  @Post('logout')
+  logout(@Body() dto: RefreshTokenDto): Promise<{ message: string }> {
+    return this.authService.logout(dto.refreshToken);
+  }
 
   @Get('admin-test')
   @UseGuards(jwtGuard, RolesGuard)

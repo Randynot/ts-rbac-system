@@ -11,6 +11,7 @@ jest.mock('resend', () => ({
     emails: { send },
   })),
 }));
+import { Test, TestingModule } from '@nestjs/testing';
 
 describe('EmailService', () => {
   let service: EmailService;
@@ -29,6 +30,18 @@ describe('EmailService', () => {
     };
     service = new EmailService(config as unknown as ConfigService);
   });
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        EmailService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('test-resend-api-key'),
+          },
+        },
+      ],
+    }).compile();
 
   it('initializes Resend with the configured API key', () => {
     expect(Resend).toHaveBeenCalledWith('api-key');

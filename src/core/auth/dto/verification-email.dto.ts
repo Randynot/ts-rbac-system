@@ -6,6 +6,9 @@ export class SendVerificationEmailPayload {
     const input: unknown = value;
     return typeof input === 'string' ? input.trim().toLowerCase() : input;
   })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : (value as string),
+  )
   @IsEmail()
   email!: string;
 

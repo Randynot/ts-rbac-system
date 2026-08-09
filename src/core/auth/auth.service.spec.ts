@@ -8,12 +8,21 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 
 import { UsersService } from '../users/users.service';
 
 import { AccountStatus, User, UserRole } from './entities/user.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { User } from './entities/user.entity';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -49,6 +58,7 @@ describe('AuthService', () => {
       verificationToken: null,
       loginAttempts: 0,
       lockedUntil: null,
+      isVerified: true,
       ...overrides,
     }) as User;
 
@@ -79,6 +89,37 @@ describe('AuthService', () => {
       configService as unknown as ConfigService,
       eventEmitter as unknown as EventEmitter2,
     );
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: UsersService, useValue: usersService },
+        { provide: JwtService, useValue: { signAsync: jest.fn() } },
+        {
+          provide: ConfigService,
+          useValue: { getOrThrow: jest.fn(), get: jest.fn() },
+        },
+        {
+          provide: getRepositoryToken(RefreshToken),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn(),
+            createQueryRunner: jest.fn(),
+          },
+        },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
+      ],
+    }).compile();
+
+    service = module.get(AuthService);
   });
 
   describe('validateUser', () => {

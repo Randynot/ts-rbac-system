@@ -7,8 +7,28 @@ import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 
 import { AppModule } from '../src/app.module';
-import { UserRole } from '../src/core/auth/entities/user.entity';
+import { AccountStatus, UserRole } from '../src/core/auth/entities/user.entity';
+import { EmailService } from '../src/core/email/email.service';
+// import { EmailProcessor } from '../src/core/queue/processors/email.processor';
 import { UsersService } from '../src/core/users/users.service';
+
+async function registerAndVerify(
+  app: INestApplication<App>,
+  usersService: UsersService,
+  credentials: { email: string; password: string },
+): Promise<void> {
+  await request(app.getHttpServer())
+    .post('/auth/register')
+    .send(credentials)
+    .expect(201);
+
+  const user = await usersService.findOneByEmail(credentials.email);
+  await usersService.update(user!.id as UUID, {
+    isVerified: true,
+    status: AccountStatus.ACTIVE,
+    emailVerifiedAt: new Date(),
+  });
+}
 
 describe('AuthController (E2E)', () => {
   let app: INestApplication<App>;
@@ -18,7 +38,13 @@ describe('AuthController (E2E)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(EmailService)
+      .useValue({
+        sendEmail: jest.fn().mockResolvedValue(null),
+        sendVerificationEmail: jest.fn().mockResolvedValue(null),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
 
@@ -139,6 +165,7 @@ describe('AuthController (E2E)', () => {
 
     beforeEach(async () => {
       await registerAndVerify(userCredentials);
+      await registerAndVerify(app, usersService, userCredentials);
     });
 
     it('should login successfully and return an access token', async () => {
@@ -197,8 +224,9 @@ describe('AuthController (E2E)', () => {
     beforeEach(async () => {
       await registerAndVerify(regularUserCredentials);
       await registerAndVerify(adminUserCredentials);
+      await registerAndVerify(app, usersService, regularUserCredentials);
+      await registerAndVerify(app, usersService, adminUserCredentials);
 
-      // fetch the admin user from the db and promote their role to admin directly
       const adminUser = await usersService.findOneByEmail(
         adminUserCredentials.email,
       );

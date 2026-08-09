@@ -10,7 +10,7 @@ export const databaseConfig = registerAs(
       process.env.NODE_ENV === 'production'
         ? { rejectUnauthorized: true }
         : false,
-    synchronize: process.env.NODE_ENV !== 'production',
+    synchronize: process.env.NODE_ENV === 'development',
     logging: process.env.NODE_ENV !== 'production',
     // Autoload database entities
     entities: [__dirname + '/../../**/*.entity{.ts,.js}'],

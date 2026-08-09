@@ -1,3 +1,5 @@
+import { SendEmailParams } from './email.interface';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -18,12 +20,26 @@ export class EmailService {
     html: string;
     from?: string;
   }): Promise<CreateEmailResponseSuccess | null> {
+
+  constructor(private readonly configService: ConfigService) {
+    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
+  }
+
+  async sendEmail(
+    params: SendEmailParams,
+  ): Promise<CreateEmailResponseSuccess | null> {
     const { data, error } = await this.resend.emails.send({
       from: params.from ?? 'Acme <onboarding@resend.dev>', // use your verified domain in prod
       to: params.to,
       subject: params.subject,
       html: params.html,
     });
+
+    if (error) {
+      this.logger.error(`Failed to send email: ${error.message}`);
+      throw new Error(error.message);
+    }
+
 
     if (error) {
       this.logger.error(`Failed to send email: ${error.message}`);
