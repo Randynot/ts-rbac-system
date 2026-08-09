@@ -10,6 +10,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
+import type { Request } from 'express';
+
 import { jwtGuard } from '../auth/guards/jwt.guard';
 
 @Controller('users')
@@ -18,10 +20,10 @@ export class UsersController {
   @Post('profile-picture')
   @UseGuards(jwtGuard)
   @UseInterceptors(FileInterceptor('file'))
-  async uploadProfilePicture(
+  uploadProfilePicture(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req,
-  ) {
+    @Req() req: Request & { user: { id: string } },
+  ): { message: string } {
     return this.userService.uploadProfilePicture(req.user.id, file);
   }
 }

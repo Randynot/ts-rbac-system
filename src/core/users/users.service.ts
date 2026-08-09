@@ -103,7 +103,10 @@ export class UsersService {
       ? configuredValue
       : fallback;
   }
-  async uploadProfilePicture(userId: string, file: Express.Multer.File) {
+  uploadProfilePicture(
+    userId: string,
+    file: Express.Multer.File,
+  ): { message: string } {
     this.eventEmitter.emit('user.profile_picture.upload', {
       userId,
       file,

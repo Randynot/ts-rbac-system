@@ -8,4 +8,4 @@ import { CloudinaryConfig } from '../../shared/config/cloudinary.config';
   providers: [CloudinaryConfig, CloudinaryService],
   exports: [CloudinaryConfig, CloudinaryService],
 })
-export class CloudinaryModule{}
+export class CloudinaryModule {}

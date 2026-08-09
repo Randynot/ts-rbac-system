@@ -2,13 +2,14 @@ import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class SendVerificationEmailPayload {
-    @Transform(({ value }) =>
-        typeof value === 'string' ? value.trim().toLowerCase() : value,
-    )
-    @IsEmail()
-    email!: string;
+  @Transform(({ value }) => {
+    const input: unknown = value;
+    return typeof input === 'string' ? input.trim().toLowerCase() : input;
+  })
+  @IsEmail()
+  email!: string;
 
-    @IsString()
-    @IsNotEmpty()
-    token!: string;
+  @IsString()
+  @IsNotEmpty()
+  token!: string;
 }

@@ -9,13 +9,13 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule } from './core/auth/auth.module';
+import { EventsModule } from './core/events/events.module';
 import { QueueModule } from './core/queue/queue.module';
 import { RedisModule } from './core/redis/redis.module';
 import { UsersModule } from './core/users/users.module';
 import appConfig from './shared/config/app.config';
 import { databaseConfig } from './shared/config/database.config';
 import redisConfig from './shared/config/redis.config';
-import { EventsModule } from './core/events/events.module';
 
 @Module({
   imports: [
