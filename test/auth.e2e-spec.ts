@@ -7,8 +7,28 @@ import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 
 import { AppModule } from '../src/app.module';
-import { UserRole } from '../src/core/auth/entities/user.entity';
+import { AccountStatus, UserRole } from '../src/core/auth/entities/user.entity';
+import { EmailService } from '../src/core/email/email.service';
+// import { EmailProcessor } from '../src/core/queue/processors/email.processor';
 import { UsersService } from '../src/core/users/users.service';
+
+async function registerAndVerify(
+  app: INestApplication<App>,
+  usersService: UsersService,
+  credentials: { email: string; password: string },
+): Promise<void> {
+  await request(app.getHttpServer())
+    .post('/auth/register')
+    .send(credentials)
+    .expect(201);
+
+  const user = await usersService.findOneByEmail(credentials.email);
+  await usersService.update(user!.id as UUID, {
+    isVerified: true,
+    status: AccountStatus.ACTIVE,
+    emailVerifiedAt: new Date(),
+  });
+}
 
 describe('AuthController (E2E)', () => {
   let app: INestApplication<App>;
@@ -18,7 +38,13 @@ describe('AuthController (E2E)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(EmailService)
+      .useValue({
+        sendEmail: jest.fn().mockResolvedValue(null),
+        sendVerificationEmail: jest.fn().mockResolvedValue(null),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
 
@@ -56,9 +82,9 @@ describe('AuthController (E2E)', () => {
         .send(registerDto)
         .expect(201);
 
-      expect(response.body).toHaveProperty('id');
-      expect(response.body).toHaveProperty('email', registerDto.email);
-      expect(response.body).not.toHaveProperty('password'); // Password shouldn't be leaked
+      expect(response.body).toEqual({
+        message: 'Sign Up successful, verify Email.',
+      });
     });
 
     it('should fail with a 400 bad request if the email is already registered', async () => {
@@ -108,10 +134,7 @@ describe('AuthController (E2E)', () => {
     };
 
     beforeEach(async () => {
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(userCredentials)
-        .expect(201);
+      await registerAndVerify(app, usersService, userCredentials);
     });
 
     it('should login successfully and return an access token', async () => {
@@ -168,18 +191,9 @@ describe('AuthController (E2E)', () => {
     };
 
     beforeEach(async () => {
-      // register a regular user and an admin user
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(regularUserCredentials)
-        .expect(201);
+      await registerAndVerify(app, usersService, regularUserCredentials);
+      await registerAndVerify(app, usersService, adminUserCredentials);
 
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(adminUserCredentials)
-        .expect(201);
-
-      // fetch the admin user from the db and promote their role to admin directly
       const adminUser = await usersService.findOneByEmail(
         adminUserCredentials.email,
       );

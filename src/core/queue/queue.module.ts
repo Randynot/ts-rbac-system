@@ -1,4 +1,6 @@
 // src/queue/queue.module.ts
+import { EmailQueueErrorHandler } from './email-queue-error-handler.provider';
+
 import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -23,7 +25,7 @@ import { EmailProcessor } from './processors/email.processor';
 
     BullModule.registerQueue({ name: 'email' }),
   ],
-  providers: [EmailProcessor],
+  providers: [EmailProcessor, EmailQueueErrorHandler],
   exports: [BullModule],
 })
 export class QueueModule {}

@@ -1,6 +1,8 @@
 import { AuthService } from './auth.service';
 
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -31,6 +33,7 @@ describe('AuthService login lockout', () => {
       password: 'hashed-password',
       loginAttempts: 0,
       lockedUntil: null,
+      isVerified: true,
       ...overrides,
     }) as User;
 
@@ -47,6 +50,11 @@ describe('AuthService login lockout', () => {
         AuthService,
         { provide: UsersService, useValue: usersService },
         { provide: JwtService, useValue: { signAsync: jest.fn() } },
+        {
+          provide: ConfigService,
+          useValue: { getOrThrow: jest.fn(), get: jest.fn() },
+        },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
