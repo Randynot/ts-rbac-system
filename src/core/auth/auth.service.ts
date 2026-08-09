@@ -17,10 +17,8 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import * as bcrypt from 'bcrypt';
-import { UUID } from 'node:crypto';
-import bcrypt from 'bcrypt';
 import type { SignOptions } from 'jsonwebtoken';
-import { UUID, createHmac, randomUUID } from 'node:crypto';
+import { type UUID, createHmac, randomUUID } from 'node:crypto';
 import { DataSource, Repository } from 'typeorm';
 
 import { UsersService } from '../users/users.service';
@@ -48,7 +46,6 @@ export class AuthService {
     private refreshTokenRepository: Repository<RefreshToken>,
     private dataSource: DataSource,
     private eventEmitter: EventEmitter2,
-  ) {}
   ) {
     this.jwtRefreshSecret = this.configService.getOrThrow<string>(
       'appConfig.auth.jwtRefreshSecret',
@@ -333,8 +330,7 @@ export class AuthService {
           'appConfig.auth.jwtVerificationSecret',
         ),
       });
-    } catch {
-    } catch (err) {
+    } catch (err: unknown) {
       this.logger.error('Email verification failed', err);
       throw new BadRequestException('Invalid or expired verification token');
     }

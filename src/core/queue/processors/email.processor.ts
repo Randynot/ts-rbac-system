@@ -3,8 +3,6 @@ import { Logger } from '@nestjs/common';
 
 import { Job } from 'bullmq';
 
-import { SendVerificationEmailPayload } from '../../auth/dto/verification-email.dto';
-// import { SendVerificationEmailPayload } from '../../auth/dto/verification-email.dto';
 import { EmailService } from '../../email/email.service';
 import { EmailJobData } from '../queue.interface';
 
@@ -18,7 +16,6 @@ export class EmailProcessor extends WorkerHost {
     this.emailService = emailService;
   }
 
-  async process(job: Job<SendVerificationEmailPayload>): Promise<void> {
   async process(job: Job<EmailJobData>): Promise<void> {
     this.logger.log(`Processing job ${job.id} → ${job.name}`);
 
@@ -33,12 +30,6 @@ export class EmailProcessor extends WorkerHost {
         throw new Error(`Unknown job: ${job.name}`);
     }
   }
-
-  // private async sendVerificationEmail(data: SendVerificationEmailPayload) {
-  //   const { email, token } = data;
-  //   // your email logic
-  //   this.logger.log(`Welcome email sent to ${data.email}`);
-  // }
 
   @OnWorkerEvent('completed')
   onCompleted(job: Job): void {

@@ -7,6 +7,8 @@ describe('AuthController', () => {
     login: jest.Mock;
     register: jest.Mock;
     verifyEmail: jest.Mock;
+    refreshTokens: jest.Mock;
+    logout: jest.Mock;
   };
 
   beforeEach(() => {
@@ -14,6 +16,8 @@ describe('AuthController', () => {
       login: jest.fn(),
       register: jest.fn(),
       verifyEmail: jest.fn(),
+      refreshTokens: jest.fn(),
+      logout: jest.fn(),
     };
     controller = new AuthController(authService as unknown as AuthService);
   });
@@ -50,6 +54,9 @@ describe('AuthController', () => {
   it('returns the admin route response', () => {
     expect(controller.adminTest()).toEqual({
       message: 'You have admin access',
+    });
+  });
+
   describe('refresh', () => {
     it('delegates to authService.refreshTokens with the given token', async () => {
       const dto = { refreshToken: 'some-refresh-token' };

@@ -32,17 +32,6 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
-  // TODO: add refresh and logout methods before uncommenting
-
-  // @Post('refresh')
-  // refresh(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
-  //   return this.authService.refreshTokens(dto.refreshToken);
-  // }
-
-  // @Post('logout')
-  // logout(@Body() dto: RefreshTokenDto): Promise<{ message: string }> {
-  //   return this.authService.logout(dto.refreshToken);
-  // }
   @Post('refresh')
   refresh(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
     return this.authService.refreshTokens(dto.refreshToken);

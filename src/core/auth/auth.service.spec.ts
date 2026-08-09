@@ -8,21 +8,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
-import { UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { JwtService } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
 import * as bcrypt from 'bcrypt';
-import { DataSource } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { UsersService } from '../users/users.service';
 
-import { AccountStatus, User, UserRole } from './entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { User } from './entities/user.entity';
+import { AccountStatus, User, UserRole } from './entities/user.entity';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -43,6 +36,13 @@ describe('AuthService', () => {
   let jwtService: { signAsync: jest.Mock; verifyAsync: jest.Mock };
   let configService: { getOrThrow: jest.Mock };
   let eventEmitter: { emit: jest.Mock };
+  let refreshTokenRepository: {
+    findOne: jest.Mock;
+    save: jest.Mock;
+    create: jest.Mock;
+    createQueryBuilder: jest.Mock;
+  };
+  let dataSource: { transaction: jest.Mock };
   const compare = bcrypt.compare as jest.Mock;
   const hash = bcrypt.hash as jest.Mock;
 
@@ -58,7 +58,6 @@ describe('AuthService', () => {
       verificationToken: null,
       loginAttempts: 0,
       lockedUntil: null,
-      isVerified: true,
       ...overrides,
     }) as User;
 
@@ -77,9 +76,24 @@ describe('AuthService', () => {
       verifyAsync: jest.fn(),
     };
     configService = {
-      getOrThrow: jest.fn().mockReturnValue('verification-secret'),
+      getOrThrow: jest.fn((key: string): string => {
+        const values: Record<string, string> = {
+          'appConfig.auth.jwtRefreshSecret': 'refresh-secret',
+          'appConfig.auth.jwtRefreshExpiry': '7d',
+          'appConfig.auth.refreshTokenHashSecret': 'hash-secret',
+          'appConfig.auth.jwtVerificationSecret': 'verification-secret',
+        };
+        return values[key] ?? 'test-secret';
+      }),
     };
     eventEmitter = { emit: jest.fn() };
+    refreshTokenRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+      create: jest.fn((value: object): object => value),
+      createQueryBuilder: jest.fn(),
+    };
+    dataSource = { transaction: jest.fn() };
     compare.mockReset();
     hash.mockReset();
 
@@ -87,39 +101,10 @@ describe('AuthService', () => {
       usersService as unknown as UsersService,
       jwtService as unknown as JwtService,
       configService as unknown as ConfigService,
+      refreshTokenRepository as unknown as Repository<RefreshToken>,
+      dataSource as unknown as DataSource,
       eventEmitter as unknown as EventEmitter2,
     );
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: UsersService, useValue: usersService },
-        { provide: JwtService, useValue: { signAsync: jest.fn() } },
-        {
-          provide: ConfigService,
-          useValue: { getOrThrow: jest.fn(), get: jest.fn() },
-        },
-        {
-          provide: getRepositoryToken(RefreshToken),
-          useValue: {
-            findOne: jest.fn(),
-            save: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            create: jest.fn(),
-          },
-        },
-        {
-          provide: DataSource,
-          useValue: {
-            transaction: jest.fn(),
-            createQueryRunner: jest.fn(),
-          },
-        },
-        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
-      ],
-    }).compile();
-
-    service = module.get(AuthService);
   });
 
   describe('validateUser', () => {
@@ -242,20 +227,34 @@ describe('AuthService', () => {
     });
   });
 
-  it('signs a login token with the expected claims', async () => {
+  it('signs and stores a login token pair with the expected claims', async () => {
     const account = user();
     usersService.findOneByEmailWithPassword.mockResolvedValue(account);
     compare.mockResolvedValue(true);
-    jwtService.signAsync.mockResolvedValue('access-token');
+    jwtService.signAsync
+      .mockResolvedValueOnce('access-token')
+      .mockResolvedValueOnce('refresh-token');
 
     await expect(
       service.login({ email: account.email, password: 'password123' }),
-    ).resolves.toEqual({ accessToken: 'access-token' });
-    expect(jwtService.signAsync).toHaveBeenCalledWith({
+    ).resolves.toEqual({
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+    });
+    expect(jwtService.signAsync).toHaveBeenNthCalledWith(1, {
       sub: account.id,
       email: account.email,
       role: account.role,
     });
+    expect(refreshTokenRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: account.id,
+        expiresAt: expect.any(Date) as Date,
+        tokenFamily: expect.any(String) as string,
+        token: expect.any(String) as string,
+      }),
+    );
+    expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
   });
 
   describe('verifyEmail', () => {

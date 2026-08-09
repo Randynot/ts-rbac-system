@@ -25,7 +25,6 @@ import { EmailProcessor } from './processors/email.processor';
 
     BullModule.registerQueue({ name: 'email' }),
   ],
-  providers: [EmailProcessor],
   providers: [EmailProcessor, EmailQueueErrorHandler],
   exports: [BullModule],
 })

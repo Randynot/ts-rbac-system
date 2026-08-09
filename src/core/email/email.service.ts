@@ -14,17 +14,6 @@ export class EmailService {
     this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
   }
 
-  async sendEmail(params: {
-    to: string | string[];
-    subject: string;
-    html: string;
-    from?: string;
-  }): Promise<CreateEmailResponseSuccess | null> {
-
-  constructor(private readonly configService: ConfigService) {
-    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
-  }
-
   async sendEmail(
     params: SendEmailParams,
   ): Promise<CreateEmailResponseSuccess | null> {
@@ -39,13 +28,6 @@ export class EmailService {
       this.logger.error(`Failed to send email: ${error.message}`);
       throw new Error(error.message);
     }
-
-
-    if (error) {
-      this.logger.error(`Failed to send email: ${error.message}`);
-      throw new Error(error.message);
-    }
-
     return data;
   }
 

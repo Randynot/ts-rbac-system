@@ -22,12 +22,6 @@ import redisConfig from './shared/config/redis.config';
 
 @Module({
   imports: [
-    EventsModule,
-    AuthModule,
-    UsersModule,
-    QueueModule,
-    EventEmitterModule.forRoot(),
-    RedisModule,
     // 1. Core system configuration
     ConfigModule.forRoot({
       load: [databaseConfig, appConfig, redisConfig],
@@ -40,6 +34,7 @@ import redisConfig from './shared/config/redis.config';
     QueueModule,
     EventEmitterModule.forRoot(),
     RedisModule,
+    EventsModule,
 
     // 2. Rate Limiting -> 10 req/min
     ThrottlerModule.forRoot({
