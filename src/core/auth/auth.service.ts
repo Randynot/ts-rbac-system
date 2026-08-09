@@ -1,38 +1,36 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
-  ForbiddenException,
 } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 
-import { AccountStatus } from './entities/user.entity';
-import { UUID } from 'node:crypto';
-
 import * as bcrypt from 'bcrypt';
-import { ConfigService } from '@nestjs/config';
+import { UUID } from 'node:crypto';
 
 import { UsersService } from '../users/users.service';
 
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { User } from './entities/user.entity';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SendVerificationEmailPayload } from './dto/verification-email.dto';
-import { Logger } from '@nestjs/common';
+import { AccountStatus } from './entities/user.entity';
+import { User } from './entities/user.entity';
 
 const DUMMY_PASSWORD_HASH =
   '$2b$12$MwL2hICCvJC6Ft2pCEb/o.TxXNtKk8bgxTDbE0SYclpdRrSxrpN0u';
 
 @Injectable()
 export class AuthService {
-
   private readonly logger = new Logger(AuthService.name);
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
     private eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findOneByEmailWithPassword(email);
     if (!user || !user.password) {
@@ -113,27 +111,41 @@ export class AuthService {
     };
   }
 
-  async verificationSecret(data: { id: string; email: string }) {
-    const payload = { sub: data.id, email: data.email, purpose: 'email-verification' };
+  async verificationSecret(data: {
+    id: string;
+    email: string;
+  }): Promise<string> {
+    const payload = {
+      sub: data.id,
+      email: data.email,
+      purpose: 'email-verification',
+    };
 
     const token = await this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('appConfig.auth.jwtVerificationSecret'),
+      secret: this.configService.getOrThrow<string>(
+        'appConfig.auth.jwtVerificationSecret',
+      ),
       expiresIn: '15m',
     });
 
-    await this.usersService.update(data.id as UUID, { verificationToken: token });
+    await this.usersService.update(data.id as UUID, {
+      verificationToken: token,
+    });
 
     return token;
   }
 
-  async verifyEmail(token: string) {
+  async verifyEmail(token: string): Promise<{ verified: boolean }> {
     let payload: { sub: string; email: string; purpose: string };
 
     try {
       payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow<string>('appConfig.auth.jwtVerificationSecret'),
+        secret: this.configService.getOrThrow<string>(
+          'appConfig.auth.jwtVerificationSecret',
+        ),
       });
     } catch (err) {
+      this.logger.error('Email verification failed', err);
       throw new BadRequestException('Invalid or expired verification token');
     }
 
@@ -159,5 +171,4 @@ export class AuthService {
 
     return { verified: true };
   }
-
 }
