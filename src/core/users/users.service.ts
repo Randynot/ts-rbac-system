@@ -16,7 +16,7 @@ export class UsersService {
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   async incrementFailedAttempts(userId: string): Promise<void> {
     const maxAttempts = this.getPositiveIntegerConfig(

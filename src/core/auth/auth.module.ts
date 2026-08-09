@@ -1,15 +1,15 @@
 import { AuthController } from './auth.controller';
+import { AuthListener } from './auth.listener';
 import { AuthService } from './auth.service';
 
 import { Module, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthListener } from './auth.listener';
-import { QueueModule } from '../queue/queue.module';
 
 import type { SignOptions } from 'jsonwebtoken';
 
+import { QueueModule } from '../queue/queue.module';
 import { UsersModule } from '../users/users.module';
 
 import { RefreshToken } from './entities/refresh-token.entity';

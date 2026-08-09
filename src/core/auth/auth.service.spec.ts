@@ -1,13 +1,18 @@
 import { AuthService } from './auth.service';
 
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 
 import { UsersService } from '../users/users.service';
 
+import { RefreshToken } from './entities/refresh-token.entity';
 import { User } from './entities/user.entity';
 
 jest.mock('bcrypt', () => ({
@@ -31,6 +36,7 @@ describe('AuthService login lockout', () => {
       password: 'hashed-password',
       loginAttempts: 0,
       lockedUntil: null,
+      isVerified: true,
       ...overrides,
     }) as User;
 
@@ -47,6 +53,28 @@ describe('AuthService login lockout', () => {
         AuthService,
         { provide: UsersService, useValue: usersService },
         { provide: JwtService, useValue: { signAsync: jest.fn() } },
+        {
+          provide: ConfigService,
+          useValue: { getOrThrow: jest.fn(), get: jest.fn() },
+        },
+        {
+          provide: getRepositoryToken(RefreshToken),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: {
+            transaction: jest.fn(),
+            createQueryRunner: jest.fn(),
+          },
+        },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 
