@@ -5,7 +5,9 @@ import { Queue } from 'bullmq';
 describe('AuthListener', () => {
   it('queues verification email jobs with retry settings', async () => {
     const add = jest.fn().mockResolvedValue({ id: 'job-id' });
-    const listener = new AuthListener({ add } as unknown as Queue);
+    const emailQueue = { add } as unknown as Queue;
+    const authQueue = { add: jest.fn() } as unknown as Queue;
+    const listener = new AuthListener(emailQueue, authQueue);
     const payload = { email: 'user@example.com', token: 'token-value' };
 
     await listener.queueVerificationEmail(payload);
@@ -20,7 +22,9 @@ describe('AuthListener', () => {
 
   it('propagates queue failures so the event emitter can report them', async () => {
     const add = jest.fn().mockRejectedValue(new Error('Redis unavailable'));
-    const listener = new AuthListener({ add } as unknown as Queue);
+    const emailQueue = { add } as unknown as Queue;
+    const authQueue = { add: jest.fn() } as unknown as Queue;
+    const listener = new AuthListener(emailQueue, authQueue);
 
     await expect(
       listener.queueVerificationEmail({
