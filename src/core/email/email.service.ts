@@ -28,7 +28,6 @@ export class EmailService {
       this.logger.error(`Failed to send email: ${error.message}`);
       throw new Error(error.message);
     }
-
     return data;
   }
 
