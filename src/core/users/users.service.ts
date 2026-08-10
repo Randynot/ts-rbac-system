@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import type { UUID } from 'node:crypto';
@@ -16,6 +17,7 @@ export class UsersService {
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async incrementFailedAttempts(userId: string): Promise<void> {
@@ -116,5 +118,26 @@ export class UsersService {
     return Number.isInteger(configuredValue) && configuredValue > 0
       ? configuredValue
       : fallback;
+  }
+  uploadProfilePicture(
+    userId: string,
+    file: Express.Multer.File,
+  ): { message: string } {
+    this.eventEmitter.emit('user.profile_picture.upload', {
+      userId,
+      file,
+    });
+
+    return {
+      message: 'Profile picture upload started',
+    };
+  }
+  async updateProfilePicture(
+    userId: string,
+    profilePicture: string,
+  ): Promise<UpdateResult> {
+    return this.usersRepository.update(userId, {
+      profilePicture,
+    });
   }
 }
