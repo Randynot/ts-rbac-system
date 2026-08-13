@@ -44,4 +44,9 @@ export class EmailProcessor extends WorkerHost {
   onFailed(job: Job, error: Error): void {
     this.logger.error(`Job ${job.id} failed: ${error.message}`);
   }
+
+  @OnWorkerEvent('error')
+  onError(error: Error): void {
+    this.logger.error(`Worker error: ${error.message}`, error.stack);
+  }
 }
