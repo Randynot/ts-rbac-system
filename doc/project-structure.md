@@ -10,33 +10,25 @@ infrastructure adapters, deployment infrastructure, and tests.
 src/
 ├── main.ts
 │   └── Application bootstrap.
-│       Example: src/main.ts
 │
 ├── app.module.ts
 │   └── Composes global core and feature core.
-│       Example: src/app.module.ts
 │
 ├── config/
 │   ├── app.config.ts
 │   │   └── Application and authentication configuration.
-│   │       Example: src/shared/config/app.config.ts
 │   ├── database.config.ts
 │   │   └── TypeORM configuration.
-│   │       Example: src/shared/config/database.config.ts
 │   ├── redis.config.ts
 │   │   └── Redis configuration.
-│   │       Example: src/shared/config/redis.config.ts
 │   └── cloudinary.config.ts
 │       └── Cloudinary configuration.
-│           Example: src/shared/config/cloudinary.config.ts
 │
 ├── common/
 │   ├── decorators/
 │   │   └── roles.decorator.ts
-│   │       Example: src/common/decorators/roles.decorator.ts
 │   ├── guards/
 │   │   └── roles.guard.ts
-│   │       Example: src/common/guards/roles/roles.guard.ts
 │   ├── filters/
 │   │   └── http-exception.filter.ts
 │   │       Centralized HTTP error response formatting and logging.
@@ -57,28 +49,19 @@ src/
 │   ├── auth/
 │   │   ├── dto/
 │   │   │   ├── create-auth.dto.ts
-│   │   │   │   Example: src/core/auth/dto/create-auth.dto.ts
 │   │   │   ├── refresh-token.dto.ts
-│   │   │   │   Example: src/core/auth/dto/refresh-token.dto.ts
 │   │   │   └── verification-email.dto.ts
-│   │   │       Example: src/core/auth/dto/verification-email.dto.ts
 │   │   ├── entities/
 │   │   │   ├── refresh-token.entity.ts
-│   │   │   │   Example: src/core/auth/entities/refresh-token.entity.ts
 │   │   │   ├── password-reset.entity.ts
-│   │   │   │   Example: src/core/auth/entities/password-reset.entity.ts
 │   │   │   └── otp-verification.entity.ts
-│   │   │       Example: src/core/auth/entities/otp-verification.entity.ts
 │   │   ├── guards/
 │   │   │   └── jwt.guard.ts
-│   │   │       Example: src/core/auth/guards/jwt.guard.ts
 │   │   ├── listeners/
 │   │   │   └── user-registered.listener.ts
 │   │   ├── strategies/
 │   │   │   ├── jwt.strategy.ts
-│   │   │   │   Example: src/core/auth/strategy/jwt.strategy.ts
 │   │   │   └── local.strategy.ts
-│   │   │       Example: src/core/auth/strategy/local.strategy.ts
 │   │   ├── types/
 │   │   │   ├── auth-response.type.ts
 │   │   │   └── auth-token-payload.type.ts
@@ -87,12 +70,10 @@ src/
 │   │   ├── service/
 │   │   │   Example: src/core/auth/auth.service.ts
 │   │   └── auth.module.ts
-│   │       Example: src/core/auth/auth.module.ts
 │   │
 │   ├── users/
 │   │   ├── entities/
 │   │   │   └── user.entity.ts
-│   │   │       Current implementation: src/core/auth/entities/user.entity.ts
 │   │   ├── listeners/
 │   │   │   └── profile-picture-upload.listener.ts
 │   │   ├── types/
@@ -104,7 +85,6 @@ src/
 │   │   │   ├── users.service.ts
 │   │   │   └── users.service.spec.ts
 │   │   └── users.module.ts
-│   │       Example: src/core/users/users.module.ts
 │   │
 │   └── health/
 │       ├── health.controller.ts
