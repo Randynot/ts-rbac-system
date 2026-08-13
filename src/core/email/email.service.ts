@@ -31,6 +31,15 @@ export class EmailService {
     return data;
   }
 
+  async sendResetEmail(to: string, token: string): Promise<void> {
+    const resetLink = `${this.configService.get<string>('LOCALHOST')}/auth/reset-password?token=${token}`;
+    await this.sendEmail({
+      to,
+      subject: 'Reset your Password',
+      html: `<p>Please click the following link to reset your password: <a href="${resetLink}">Reset Password</a></p>`,
+    });
+  }
+
   async sendVerificationEmail(to: string, token: string): Promise<void> {
     const verificationLink = `${this.configService.get<string>('LOCALHOST')}/auth/verify-email?token=${token}`;
     await this.sendEmail({

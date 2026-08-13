@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { UUID } from 'node:crypto';
 import { DeleteResult, Repository, UpdateResult } from 'typeorm';
 
+import { RefreshToken } from '../auth/entities/refresh-token.entity';
 import { User } from '../auth/entities/user.entity';
 
 @Injectable()
@@ -13,6 +14,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepository: Repository<RefreshToken>,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -91,6 +94,19 @@ export class UsersService {
 
   remove(id: UUID): Promise<DeleteResult> {
     return this.usersRepository.delete(id);
+  }
+
+  async revokeAllRefreshTokens(userId: string, reason: string): Promise<void> {
+    await this.refreshTokenRepository
+      .createQueryBuilder()
+      .update(RefreshToken)
+      .set({
+        revokedAt: () => 'CURRENT_TIMESTAMP',
+        revokedReason: reason,
+      })
+      .where('userId = :userId', { userId })
+      .andWhere('revokedAt IS NULL')
+      .execute();
   }
 
   private normalizeEmail(email: string): string {

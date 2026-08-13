@@ -6,6 +6,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { UUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 
+import { RefreshToken } from '../auth/entities/refresh-token.entity';
 import { User } from '../auth/entities/user.entity';
 
 describe('UsersService', () => {
@@ -23,6 +24,9 @@ describe('UsersService', () => {
     find: jest.Mock;
     update: jest.Mock;
     delete: jest.Mock;
+  };
+  let refreshTokenRepository: {
+    createQueryBuilder: jest.Mock;
   };
   let queryBuilder: {
     update: jest.Mock;
@@ -68,12 +72,16 @@ describe('UsersService', () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
+    refreshTokenRepository = {
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+    };
     config = {
       get: jest.fn((_key: string, fallback: number): number => fallback),
     };
     events = { emit: jest.fn() };
     service = new UsersService(
       repository as unknown as Repository<User>,
+      refreshTokenRepository as unknown as Repository<RefreshToken>,
       config as unknown as ConfigService,
       events as unknown as EventEmitter2,
     );

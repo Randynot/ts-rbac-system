@@ -2,7 +2,7 @@ import { AuthController } from './auth.controller';
 import { AuthListener } from './auth.listener';
 import { AuthService } from './auth.service';
 
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -19,7 +19,7 @@ import { LocalStrategy } from './strategy/local.strategy';
 @Module({
   imports: [
     UsersModule,
-    QueueModule,
+    forwardRef(() => QueueModule),
     TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
       inject: [ConfigService],

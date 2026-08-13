@@ -1,8 +1,7 @@
 import { EmailProcessor } from './email.processor';
+import { EmailService } from './email.service';
 
 import { Job } from 'bullmq';
-
-import { EmailService } from '../../email/email.service';
 
 describe('EmailProcessor', () => {
   let sendVerificationEmail: jest.Mock;

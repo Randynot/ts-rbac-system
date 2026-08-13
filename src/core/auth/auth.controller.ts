@@ -32,6 +32,23 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: { email: string }): { message: string } {
+    this.authService.queueForgotPasswordProcess(dto.email);
+    return {
+      message:
+        'If an account with that email exists, a password reset link has been sent.',
+    };
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body() dto: { newPassword: string },
+    @Query('token') token: string,
+  ): Promise<{ message: string }> {
+    await this.authService.resetPassword(token, dto.newPassword);
+    return { message: 'Your password has been reset successfully.' };
+  }
   @Post('refresh')
   refresh(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
     return this.authService.refreshTokens(dto.refreshToken);

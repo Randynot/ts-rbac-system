@@ -32,6 +32,7 @@ describe('AuthService', () => {
     resetFailedAttempts: jest.Mock;
     create: jest.Mock;
     update: jest.Mock;
+    revokeAllRefreshTokens: jest.Mock;
   };
   let jwtService: { signAsync: jest.Mock; verifyAsync: jest.Mock };
   let configService: { getOrThrow: jest.Mock };
@@ -56,6 +57,7 @@ describe('AuthService', () => {
       status: AccountStatus.ACTIVE,
       isVerified: true,
       verificationToken: null,
+      resetToken: null,
       loginAttempts: 0,
       lockedUntil: null,
       ...overrides,
@@ -70,6 +72,7 @@ describe('AuthService', () => {
       resetFailedAttempts: jest.fn().mockResolvedValue(undefined),
       create: jest.fn(),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
+      revokeAllRefreshTokens: jest.fn().mockResolvedValue(undefined),
     };
     jwtService = {
       signAsync: jest.fn(),
@@ -82,6 +85,7 @@ describe('AuthService', () => {
           'appConfig.auth.jwtRefreshExpiry': '7d',
           'appConfig.auth.refreshTokenHashSecret': 'hash-secret',
           'appConfig.auth.jwtVerificationSecret': 'verification-secret',
+          'appConfig.auth.jwtResetSecret': 'reset-secret',
         };
         return values[key] ?? 'test-secret';
       }),
@@ -327,6 +331,154 @@ describe('AuthService', () => {
           verificationToken: null,
           emailVerifiedAt: expect.any(Date) as Date,
         }),
+      );
+    });
+  });
+
+  describe('queueForgotPasswordProcess', () => {
+    it('emits the reset-password-process event with the given email', () => {
+      service.queueForgotPasswordProcess('user@example.com');
+
+      expect(eventEmitter.emit).toHaveBeenCalledWith(
+        'user.reset-password-process',
+        'user@example.com',
+      );
+    });
+  });
+
+  describe('forgotPassword', () => {
+    it('does nothing when no user matches the email', async () => {
+      usersService.findOneByEmail.mockResolvedValue(null);
+
+      await expect(
+        service.forgotPassword('missing@example.com'),
+      ).resolves.toBeUndefined();
+      expect(jwtService.signAsync).not.toHaveBeenCalled();
+      expect(usersService.update).not.toHaveBeenCalled();
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
+    });
+
+    it('generates and stores a hashed reset token, emitting the raw token', async () => {
+      const account = user();
+      usersService.findOneByEmail.mockResolvedValue(account);
+      jwtService.signAsync.mockResolvedValue('reset-token');
+      hash.mockResolvedValue('hashed-reset-token');
+
+      await service.forgotPassword(account.email);
+
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        { sub: account.id, purpose: 'password-reset' },
+        expect.objectContaining({ expiresIn: '15m' }),
+      );
+      expect(usersService.update).toHaveBeenNthCalledWith(1, account.id, {
+        resetToken: null,
+      });
+      expect(usersService.update).toHaveBeenNthCalledWith(2, account.id, {
+        resetToken: 'hashed-reset-token',
+      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith('user.forgot-password', {
+        email: account.email,
+        token: 'reset-token',
+      });
+    });
+  });
+
+  describe('resetPassword', () => {
+    const token = 'reset-token';
+    const payload = {
+      sub: '1aa6c952-c649-4d02-8f5b-d705caea7f75',
+      purpose: 'password-reset',
+    };
+
+    it('rejects an invalid or expired JWT', async () => {
+      jwtService.verifyAsync.mockRejectedValue(new Error('expired'));
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).rejects.toEqual(
+        new BadRequestException('Invalid or expired reset token/ bad token'),
+      );
+      expect(usersService.findOneById).not.toHaveBeenCalled();
+    });
+
+    it('rejects a token with the wrong purpose', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        ...payload,
+        purpose: 'access',
+      });
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).rejects.toEqual(
+        new BadRequestException('Invalid or expired reset token/ purpose'),
+      );
+      expect(usersService.findOneById).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the user no longer exists', async () => {
+      jwtService.verifyAsync.mockResolvedValue(payload);
+      usersService.findOneById.mockResolvedValue(null);
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).rejects.toEqual(
+        new BadRequestException(
+          'Invalid or expired reset token/ no user or reset token',
+        ),
+      );
+    });
+
+    it('rejects when the user has no stored reset token', async () => {
+      jwtService.verifyAsync.mockResolvedValue(payload);
+      usersService.findOneById.mockResolvedValue(user({ resetToken: null }));
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).rejects.toEqual(
+        new BadRequestException(
+          'Invalid or expired reset token/ no user or reset token',
+        ),
+      );
+      expect(compare).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the token does not match the stored hash', async () => {
+      jwtService.verifyAsync.mockResolvedValue(payload);
+      usersService.findOneById.mockResolvedValue(
+        user({ resetToken: 'stored-hash' }),
+      );
+      compare.mockResolvedValue(false);
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).rejects.toEqual(
+        new BadRequestException(
+          'Invalid or expired reset token/ token mismatch',
+        ),
+      );
+      expect(usersService.update).not.toHaveBeenCalled();
+    });
+
+    it('updates the password, clears the reset token, and revokes sessions on success', async () => {
+      const account = user({ resetToken: 'stored-hash' });
+      jwtService.verifyAsync.mockResolvedValue(payload);
+      usersService.findOneById.mockResolvedValue(account);
+      compare.mockResolvedValue(true);
+      hash.mockResolvedValue('new-hashed-password');
+
+      await expect(
+        service.resetPassword(token, 'newPassword123'),
+      ).resolves.toEqual({
+        message: 'Password has been reset successfully.',
+      });
+      expect(usersService.update).toHaveBeenCalledWith(account.id, {
+        password: 'new-hashed-password',
+        resetToken: null,
+        loginAttempts: 0,
+      });
+      expect(usersService.revokeAllRefreshTokens).toHaveBeenCalledWith(
+        account.id,
+        'Password reset',
       );
     });
   });

@@ -4,3 +4,8 @@ export interface SendEmailParams {
   html: string;
   from?: string;
 }
+
+export interface EmailJobData {
+  email: string;
+  token: string;
+}

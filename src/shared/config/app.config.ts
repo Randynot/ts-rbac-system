@@ -12,6 +12,7 @@ export default registerAs('appConfig', () => ({
     refreshTokenHashSecret:
       process.env.REFRESH_TOKEN_HASH_SECRET || 'fallback-hash-secret-key',
     jwtVerificationSecret: process.env.JWT_VERIFICATION_SECRET,
+    jwtResetSecret: process.env.JWT_RESET_SECRET,
     // Parsing this into a number to prevent calculations on strings!
     bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10),
     lockoutMaxAttempts: parseInt(

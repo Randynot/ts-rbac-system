@@ -1,10 +1,11 @@
+import { EmailService } from './email.service';
+
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 
 import { Job } from 'bullmq';
 
-import { EmailService } from '../../email/email.service';
-import { EmailJobData } from '../queue.interface';
+import { EmailJobData } from '../queue/queue.interface';
 
 @Processor('email')
 export class EmailProcessor extends WorkerHost {
@@ -26,6 +27,9 @@ export class EmailProcessor extends WorkerHost {
           job.data.token,
         );
         break;
+      case 'send-reset-email':
+        await this.emailService.sendResetEmail(job.data.email, job.data.token);
+        break;
       default:
         throw new Error(`Unknown job: ${job.name}`);
     }
@@ -43,6 +47,6 @@ export class EmailProcessor extends WorkerHost {
 
   @OnWorkerEvent('error')
   onError(error: Error): void {
-    this.logger.error(`Worker error: ${error.message}`);
+    this.logger.error(`Worker error: ${error.message}`, error.stack);
   }
 }
